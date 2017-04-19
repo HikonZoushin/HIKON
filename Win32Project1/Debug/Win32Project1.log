@@ -1,0 +1,4 @@
+﻿  Source.cpp
+c:\users\m0114\documents\visual studio 2017\projects\win32project1\source.cpp(169): warning C4390: ';': 制御が空の文が見つかりました。意図した記述でしょうか?
+  Win32Project1.vcxproj -> c:\users\m0114\documents\visual studio 2017\Projects\Win32Project1\Debug\Win32Project1.exe
+  Win32Project1.vcxproj -> c:\users\m0114\documents\visual studio 2017\Projects\Win32Project1\Debug\Win32Project1.pdb (Partial PDB)
