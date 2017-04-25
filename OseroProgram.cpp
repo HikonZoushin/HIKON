@@ -6,50 +6,10 @@
 //
 //////////////////////////////////////////////////
 
-#include <math.h>
+#pragma once
+#include "math.h"
 #include "DxLib.h"
-
-class Fps {
-	int mStartTime;         //測定開始時刻
-	int mCount;             //カウンタ
-	float mFps;             //fps
-	static const int N = 12;//平均を取るサンプル数
-	static const int FPS = 12;	//設定したFPS
-
-
-public:
-	Fps() {
-		mStartTime = 0;
-		mCount = 0;
-		mFps = 0;
-	}
-
-	bool Update() {
-		if (mCount == 0) { //1フレーム目なら時刻を記憶
-			mStartTime = GetNowCount();
-		}
-		if (mCount == N) { //12フレーム目なら平均を計算する
-			int t = GetNowCount();
-			mFps = 1000.f / ((t - mStartTime) / (float)N);
-			mCount = 0;
-			mStartTime = t;
-		}
-		mCount++;
-		return true;
-	}
-
-	void Draw() {
-		DrawFormatString(0, 0, GetColor(255, 255, 255), "%.1f", mFps);
-	}
-
-	void Wait() {
-		int tookTime = GetNowCount() - mStartTime;	//かかった時間
-		int waitTime = mCount * 1000 / FPS - tookTime;	//待つべき時間
-		if (waitTime > 0) {
-			Sleep(waitTime);	//待機
-		}
-	}
-};
+#include "FPS.h"
 
 void Board() {//盤面の描画
 	int Cr = GetColor(0, 0, 0);//黒色を指定
@@ -80,173 +40,212 @@ void Stone(int slot[65]) {//石の描画
 	}
 }
 
-int* Decision(int slot[65],int slotP, int Color){//判定の処理、Colorの値は1：白、2：黒
+int* Result(int slot[65], int Win, int Lose) {//いろいろ表示
+	int Sb = 0, Sw = 0;
+	int Result[3] = { 0,0,0 };
+	for (int i = 0; i < 64; i++) {
+		if (slot[i] == 1)Sw++;
+		if (slot[i] == 2)Sb++;
+	}
+	DrawFormatString(5, 65, GetColor(255, 255, 255), " %d勝", Win);
+	DrawFormatString(5, 85, GetColor(255, 255, 255), " %d敗", Lose);
+	if (Sw + Sb == 64) {
+		if (slot[64] == 2) {
+			if (Sw > Sb) {
+				DrawFormatString(5, 25, GetColor(255, 255, 255), "あなたの負け");
+			}
+			else {
+				DrawFormatString(5, 25, GetColor(255, 255, 255), "あなたの勝ち");
+			}
+			DrawFormatString(5, 45, GetColor(255, 255, 255), "ESCで再戦");
+		}
+		else {
+			if (Sw > Sb) {
+				Result[2]++;
+			}
+			else {
+				Result[1]++;
+			}
+			DrawFormatString(5, 45, GetColor(255, 255, 255), "ESCで再戦");
+		}
+		Result[0] = 2;
+		return Result;
+	}
+	else {
+		DrawFormatString(5, 25, GetColor(255, 255, 255), "黒の数 %d", Sb);
+		DrawFormatString(5, 45, GetColor(255, 255, 255), "白の数 %d", Sw);
+	}
+	return Result;
+}
+
+
+int* Decision(int slot[65], int slotP, int Color) {//判定の処理、Colorの値は1：白、2：黒
 	int flag = 0;//判定が有効だったかのフラグ
 
-		//左上の判定
-		if ((slotP > 17) && (slotP != 24) && (slotP != 25) && (slotP != 32) && (slotP != 33) && (slotP != 40) && (slotP != 41) && (slotP != 48) && (slotP != 49) && (slotP != 56) && (slotP != 57)) {//処理を行えないIDを除外
-			if ((((Color == 1) && (slot[slotP - 9] == 2)) || ((Color == 2) && (slot[slotP - 9] == 1)) && (slot[slotP - 9] != 0))) {//左上に違う色があった場合
-				for (int i = 2; i < 8; i++) {
-					if (slotP - (9 * i) < 0)break;//盤外へ出た際に処理を終了する
-					if ((i > 2) && ((slotP - 9 * i == 39) || (slotP - 9 * i == 31) || (slotP - 9 * i == 23) || (slotP - 9 * i == 15) || (slotP - 9 * i == 7)))break;//一周した時に処理を終了する
-					if (((Color == 1) && (slot[slotP - (9 * i)] == 2)) || ((Color == 2) && (slot[slotP - (9 * i)] == 1))) {}//起点と違う色の場合iを増やす
-					else if (((Color == 1) && (slot[slotP - (9 * i)] == 1)) || ((Color == 2) && (slot[slotP - (9 * i)] == 2))) {//起点と同じ色の場合
-						for (int j = i - 1; j > 0; j--) {
-							if (Color == 1)slot[slotP - 9 * j] = 1, flag = 1;//色を白に反転させる
-							if (Color == 2)slot[slotP - 9 * j] = 2, flag = 1;//色を黒に反転させる
-						}
-					}
-					else if (slot[slotP - (9 * i)] == 0) {//空白だった場合
-						break;
+				 //左上の判定
+	if ((slotP > 17) && (slotP != 24) && (slotP != 25) && (slotP != 32) && (slotP != 33) && (slotP != 40) && (slotP != 41) && (slotP != 48) && (slotP != 49) && (slotP != 56) && (slotP != 57)) {//処理を行えないIDを除外
+		if ((((Color == 1) && (slot[slotP - 9] == 2)) || ((Color == 2) && (slot[slotP - 9] == 1)) && (slot[slotP - 9] != 0))) {//左上に違う色があった場合
+			for (int i = 2; i < 8; i++) {
+				if (slotP - (9 * i) < 0)break;//盤外へ出た際に処理を終了する
+				if ((i > 2) && ((slotP - 9 * i == 39) || (slotP - 9 * i == 31) || (slotP - 9 * i == 23) || (slotP - 9 * i == 15) || (slotP - 9 * i == 7)))break;//一周した時に処理を終了する
+				if (((Color == 1) && (slot[slotP - (9 * i)] == 2)) || ((Color == 2) && (slot[slotP - (9 * i)] == 1))) {}//起点と違う色の場合iを増やす
+				else if (((Color == 1) && (slot[slotP - (9 * i)] == 1)) || ((Color == 2) && (slot[slotP - (9 * i)] == 2))) {//起点と同じ色の場合
+					for (int j = i - 1; j > 0; j--) {
+						if (Color == 1)slot[slotP - 9 * j] = 1, flag = 1;//色を白に反転させる
+						if (Color == 2)slot[slotP - 9 * j] = 2, flag = 1;//色を黒に反転させる
 					}
 				}
-			}
-		}			//左上ここまで
-
-					//上の判定
-		if ((slotP > 16)) {//処理を行えないIDを除外
-			if ((((Color == 1) && (slot[slotP - 8] == 2)) || ((Color == 2) && (slot[slotP - 8] == 1))) && (slot[slotP - 8] != 0)) {//上に違う色があった場合
-				for (int i = 2; i < 8; i++) {
-					if (slotP - (8 * i) < 0)break;//盤外へ出た際に処理を終了する
-					if ((Color == 1) && (slot[slotP - (8 * i)] == 2) || (Color == 2) && (slot[slotP - (8 * i)] == 1)) {}//起点と違う色の場合iを増やす
-					else if ((Color == 1) && (slot[slotP - (8 * i)] == 1) || (Color == 2) && (slot[slotP - (8 * i)] == 2)) {//起点と同じ色の場合
-						for (int j = i - 1; j > 0; j--) {
-							if (Color == 1)slot[slotP - 8 * j] = 1, flag = 1;//色を白に反転させる
-							if (Color == 2)slot[slotP - 8 * j] = 2, flag = 1;//色を黒に反転させる
-						}
-					}
-					else if (slot[slotP - (8 * i)] == 0) {//空白だった場合
-						break;
-					}
+				else if (slot[slotP - (9 * i)] == 0) {//空白だった場合
+					break;
 				}
 			}
-		}			//上ここまで
-
-					//右上の判定
-		if ((slotP > 15) && (slotP != 22) && (slotP != 23) && (slotP != 30) && (slotP != 31) && (slotP != 38) && (slotP != 39) && (slotP != 46) && (slotP != 47) && (slotP != 54) && (slotP != 55) && (slotP != 62) && (slotP != 63)) {//処理を行えないIDを除外
-			if ((((Color == 1) && (slot[slotP - 7] == 2)) || ((Color == 2) && (slot[slotP - 7] == 1))) && (slot[slotP - 7] != 0)) {//右上に違う色があった場合
-				for (int i = 2; i < 8; i++) {
-					if (slotP - (7 * i) < 0)break;//盤外へ出た際に処理を終了する
-					if ((i > 2) && ((slotP - 7 * i == 48) || (slotP - 7 * i == 40) || (slotP - 7 * i == 32) || (slotP - 7 * i == 24) || (slotP - 7 * i == 16) || (slotP - 7 * i == 8) || (slotP - 7 * i == 0)))break;//一周した時に処理を終了する
-					if ((Color == 1) && (slot[slotP - (7 * i)] == 2) || (Color == 2) && (slot[slotP - (7 * i)] == 1)) {}//起点と違う色の場合iを増やす
-					else if ((Color == 1) && (slot[slotP - (7 * i)] == 1) || (Color == 2) && (slot[slotP - (7 * i)] == 2)) {//起点と同じ色の場合
-						for (int j = i - 1; j > 0; j--) {
-							if (Color == 1)slot[slotP - 7 * j] = 1, flag = 1;//色を白に反転させる
-							if (Color == 2)slot[slotP - 7 * j] = 2, flag = 1;//色を黒に反転させる
-						}
-					}
-					else if (slot[slotP - (7 * i)] == 0) {//空白だった場合
-						break;
-					}
-				}
-			}
-		}			//右上ここまで
-
-					//左の判定
-		if ((slotP != 0) && (slotP != 8) && (slotP != 16) && (slotP != 24) && (slotP != 32) && (slotP != 40) && (slotP != 48) && (slotP != 56)) {//処理を行えないIDを除外
-			if ((((Color == 1) && (slot[slotP - 1] == 2)) || ((Color == 2) && (slot[slotP - 1] == 1))) && (slot[slotP - 1] != 0)) {//左に違う色があった場合
-				for (int i = 2; i < 8; i++) {
-					if ((slotP - i) < 0)break;//盤外へ出た際に処理を終了する
-					if ((i > 2) && ((slotP - i == 7) || (slotP - i == 15) || (slotP - i == 23) || (slotP - i == 31) || (slotP - i == 39) || (slotP - i == 47) || (slotP - i == 55) || (slotP - i == 63)))break;//一周した時に処理を終了する
-					if (((Color == 1) && (slot[slotP - i] == 2)) || ((Color == 2) && (slot[slotP - i] == 1))) {}//起点と違う色の場合iを増やす
-					else if (((Color == 1) && (slot[slotP - i] == 1)) || ((Color == 2) && (slot[slotP - i] == 2))) {//起点と同じ色の場合
-						for (int j = i - 1; j > 0; j--) {
-							if (Color == 1)slot[slotP - j] = 1, flag = 1;//色を白に反転させる
-							if (Color == 2)slot[slotP - j] = 2, flag = 1;//色を黒に反転させる
-						}
-					}
-					else if (slot[slotP - i] == 0) {//空白だった場合
-						break;
-					}
-				}
-			}
-		}			//左ここまで
-
-					//右の判定
-		if ((slotP != 7) && (slotP != 15) && (slotP != 23) && (slotP != 31) && (slotP != 39) && (slotP != 47) && (slotP != 55) && (slotP != 63)) {//処理を行えないIDを除外
-			if ((((Color == 1) && (slot[slotP + 1] == 2)) || ((Color == 2) && (slot[slotP + 1] == 1))) && (slot[slotP + 1] != 0)) {//右に違う色があった場合
-				for (int i = 2; i < 8; i++) {
-					if ((slotP + i) > 63)break;//盤外へ出た際に処理を終了する
-					if ((i > 2) && ((slotP + i == 8) || (slotP + i == 16) || (slotP + i == 24) || (slotP + i == 32) || (slotP + i == 40) || (slotP + i == 48) || (slotP + i == 56)))break;//一周した時に処理を終了する
-					if ((Color == 1) && (slot[slotP + i] == 2) || (Color == 2) && (slot[slotP + i] == 1)) {}//起点と違う色の場合iを増やす
-					else if ((Color == 1) && (slot[slotP + i] == 1) || (Color == 2) && (slot[slotP + i] == 2)) {//起点と同じ色の場合
-						for (int j = i - 1; j > 0; j--) {
-							if (Color == 1)slot[slotP + j] = 1, flag = 1;//色を白に反転させる
-							if (Color == 2)slot[slotP + j] = 2, flag = 1;//色を黒に反転させる
-						}
-					}
-					else if (slot[slotP + i] == 0) {//空白だった場合
-						break;
-					}
-				}
-			}
-		}			//右ここまで
-
-					//右下の判定
-		if ((slotP < 46) && (slotP != 38) && (slotP != 39) && (slotP != 30) && (slotP != 31) && (slotP != 22) && (slotP != 23) && (slotP != 14) && (slotP != 15) && (slotP != 6) && (slotP != 7)) {//処理を行えないIDを除外
-			if ((((Color == 1) && (slot[slotP + 9] == 2)) || ((Color == 2) && (slot[slotP + 9] == 1))) && (slot[slotP + 9] != 0)) {//右下に違う色があった場合
-				for (int i = 2; i < 8; i++) {
-					if (slotP + (9 * i) > 63)break;//盤外へ出た際に処理を終了する
-					if ((i > 2) && ((slotP + 9 * i == 24) || (slotP + 9 * i == 32) || (slotP + 9 * i == 40) || (slotP + 9 * i == 48) || (slotP + 9 * i == 56)))break;//一周した時に処理を終了する
-					if ((Color == 1) && (slot[slotP + (9 * i)] == 2) || (Color == 2) && (slot[slotP + (9 * i)] == 1)) {}//起点と違う色の場合iを増やす
-					else if ((Color == 1) && (slot[slotP + (9 * i)] == 1) || (Color == 2) && (slot[slotP + (9 * i)] == 2)) {//起点と同じ色の場合
-						for (int j = i - 1; j > 0; j--) {
-							if (Color == 1)slot[slotP + 9 * j] = 1, flag = 1;//色を白に反転させる
-							if (Color == 2)slot[slotP + 9 * j] = 2, flag = 1;//色を黒に反転させる
-						}
-					}
-					else if (slot[slotP + 9 * i] == 0) {//空白だった場合
-						break;
-					}
-				}
-			}
-		}			//右下ここまで
-
-					//下の判定
-		if ((slotP < 48)) {//処理を行えないIDを除外
-			if ((((Color == 1) && (slot[slotP + 8] == 2)) || ((Color == 2) && (slot[slotP + 8] == 1))) && (slot[slotP + 8] != 0)) {//下に違う色があった場合
-				for (int i = 2; i < 8; i++) {
-					if (slotP + (8 + i) > 63)break;//盤外へ出た際に処理を終了する
-					if ((Color == 1) && (slot[slotP + (8 * i)] == 2) || (Color == 2) && (slot[slotP + (8 * i)] == 1)) {}//起点と違う色の場合iを増やす
-					else if ((Color == 1) && (slot[slotP + (8 * i)] == 1) || (Color == 2) && (slot[slotP + (8 * i)] == 2)) {//起点と同じ色の場合
-						for (int j = i - 1; j > 0; j--) {
-							if (Color == 1)slot[slotP + 8 * j] = 1, flag = 1;//色を白に反転させる
-							if (Color == 2)slot[slotP + 8 * j] = 2, flag = 1;//色を黒に反転させる
-						}
-					}
-					else if (slot[slotP + 8 * i] == 0) {//空白だった場合
-						break;
-					}
-				}
-			}
-		}			//下ここまで
-
-					//左下の判定
-		if ((slotP < 48) && (slotP != 24) && (slotP != 25) && (slotP != 32) && (slotP != 33) && (slotP != 40) && (slotP != 41) && (slotP != 1) && (slotP != 8) && (slotP != 9) && (slotP != 16) && (slotP != 17) && (slotP != 0)) {//処理を行えないIDを除外
-			if ((((Color == 1) && (slot[slotP + 7] == 2)) || ((Color == 2) && (slot[slotP + 7] == 1))) && (slot[slotP + 7] != 0)) {//左下に違う色があった場合
-				for (int i = 2; i < 8; i++) {
-					if (slotP + (7 * i) > 63)break;//盤外へ出た際に処理を終了する
-					if ((i > 2) && ((slotP + 7 * i == 15) || (slotP + 7 * i == 23) || (slotP + 7 * i == 31) || (slotP + 7 * i == 39) || (slotP + 7 * i == 47) || (slotP + 7 * i == 55) || (slotP + 7 * i == 63)))break;//一周した時に処理を終了する
-					if ((Color == 1) && (slot[slotP + (7 * i)] == 2) || (Color == 2) && (slot[slotP + (7 * i)] == 1)) {}//起点と違う色の場合iを増やす
-					else if ((Color == 1) && (slot[slotP + (7 * i)] == 1) || (Color == 2) && (slot[slotP + (7 * i)] == 2)) {//起点と同じ色の場合
-						for (int j = i - 1; j > 0; j--) {
-							if (Color == 1)slot[slotP + 7 * j] = 1, flag = 1;//色を白に反転させる
-							if (Color == 2)slot[slotP + 7 * j] = 2, flag = 1;//色を黒に反転させる
-						}
-					}
-					else if (slot[slotP + 7 * i] == 0) {//空白だった場合
-						break;
-					}
-				}
-			}
-		}			//左下ここまで
-
-		if ((flag == 1)) {
-			slot[slotP] = Color;
-			slot[64] = 1;
 		}
-	return slot;
+	}			//左上ここまで
+
+				//上の判定
+	if ((slotP >= 16)) {//処理を行えないIDを除外
+		if ((((Color == 1) && (slot[slotP - 8] == 2)) || ((Color == 2) && (slot[slotP - 8] == 1))) && (slot[slotP - 8] != 0)) {//上に違う色があった場合
+			for (int i = 2; i < 8; i++) {
+				if (slotP - (8 * i) < 0)break;//盤外へ出た際に処理を終了する
+				if ((Color == 1) && (slot[slotP - (8 * i)] == 2) || (Color == 2) && (slot[slotP - (8 * i)] == 1)) {}//起点と違う色の場合iを増やす
+				else if ((Color == 1) && (slot[slotP - (8 * i)] == 1) || (Color == 2) && (slot[slotP - (8 * i)] == 2)) {//起点と同じ色の場合
+					for (int j = i - 1; j > 0; j--) {
+						if (Color == 1)slot[slotP - 8 * j] = 1, flag = 1;//色を白に反転させる
+						if (Color == 2)slot[slotP - 8 * j] = 2, flag = 1;//色を黒に反転させる
+					}
+				}
+				else if (slot[slotP - (8 * i)] == 0) {//空白だった場合
+					break;
+				}
+			}
+		}
+	}			//上ここまで
+
+				//右上の判定
+	if ((slotP > 15) && (slotP != 22) && (slotP != 23) && (slotP != 30) && (slotP != 31) && (slotP != 38) && (slotP != 39) && (slotP != 46) && (slotP != 47) && (slotP != 54) && (slotP != 55) && (slotP != 62) && (slotP != 63)) {//処理を行えないIDを除外
+		if ((((Color == 1) && (slot[slotP - 7] == 2)) || ((Color == 2) && (slot[slotP - 7] == 1))) && (slot[slotP - 7] != 0)) {//右上に違う色があった場合
+			for (int i = 2; i < 8; i++) {
+				if (slotP - (7 * i) < 0)break;//盤外へ出た際に処理を終了する
+				if ((i > 2) && ((slotP - 7 * i == 48) || (slotP - 7 * i == 40) || (slotP - 7 * i == 32) || (slotP - 7 * i == 24) || (slotP - 7 * i == 16) || (slotP - 7 * i == 8) || (slotP - 7 * i == 0)))break;//一周した時に処理を終了する
+				if ((Color == 1) && (slot[slotP - (7 * i)] == 2) || (Color == 2) && (slot[slotP - (7 * i)] == 1)) {}//起点と違う色の場合iを増やす
+				else if ((Color == 1) && (slot[slotP - (7 * i)] == 1) || (Color == 2) && (slot[slotP - (7 * i)] == 2)) {//起点と同じ色の場合
+					for (int j = i - 1; j > 0; j--) {
+						if (Color == 1)slot[slotP - 7 * j] = 1, flag = 1;//色を白に反転させる
+						if (Color == 2)slot[slotP - 7 * j] = 2, flag = 1;//色を黒に反転させる
+					}
+				}
+				else if (slot[slotP - (7 * i)] == 0) {//空白だった場合
+					break;
+				}
+			}
+		}
+	}			//右上ここまで
+
+				//左の判定
+	if ((slotP != 0) && (slotP != 8) && (slotP != 16) && (slotP != 24) && (slotP != 32) && (slotP != 40) && (slotP != 48) && (slotP != 56)) {//処理を行えないIDを除外
+		if ((((Color == 1) && (slot[slotP - 1] == 2)) || ((Color == 2) && (slot[slotP - 1] == 1))) && (slot[slotP - 1] != 0)) {//左に違う色があった場合
+			for (int i = 2; i < 8; i++) {
+				if ((slotP - i) < 0)break;//盤外へ出た際に処理を終了する
+				if ((i > 2) && ((slotP - i == 7) || (slotP - i == 15) || (slotP - i == 23) || (slotP - i == 31) || (slotP - i == 39) || (slotP - i == 47) || (slotP - i == 55) || (slotP - i == 63)))break;//一周した時に処理を終了する
+				if (((Color == 1) && (slot[slotP - i] == 2)) || ((Color == 2) && (slot[slotP - i] == 1))) {}//起点と違う色の場合iを増やす
+				else if (((Color == 1) && (slot[slotP - i] == 1)) || ((Color == 2) && (slot[slotP - i] == 2))) {//起点と同じ色の場合
+					for (int j = i - 1; j > 0; j--) {
+						if (Color == 1)slot[slotP - j] = 1, flag = 1;//色を白に反転させる
+						if (Color == 2)slot[slotP - j] = 2, flag = 1;//色を黒に反転させる
+					}
+				}
+				else if (slot[slotP - i] == 0) {//空白だった場合
+					break;
+				}
+			}
+		}
+	}			//左ここまで
+
+				//右の判定
+	if ((slotP != 7) && (slotP != 15) && (slotP != 23) && (slotP != 31) && (slotP != 39) && (slotP != 47) && (slotP != 55) && (slotP != 63)) {//処理を行えないIDを除外
+		if ((((Color == 1) && (slot[slotP + 1] == 2)) || ((Color == 2) && (slot[slotP + 1] == 1))) && (slot[slotP + 1] != 0)) {//右に違う色があった場合
+			for (int i = 2; i < 8; i++) {
+				if ((slotP + i) > 63)break;//盤外へ出た際に処理を終了する
+				if ((i > 2) && ((slotP + i == 8) || (slotP + i == 16) || (slotP + i == 24) || (slotP + i == 32) || (slotP + i == 40) || (slotP + i == 48) || (slotP + i == 56)))break;//一周した時に処理を終了する
+				if ((Color == 1) && (slot[slotP + i] == 2) || (Color == 2) && (slot[slotP + i] == 1)) {}//起点と違う色の場合iを増やす
+				else if ((Color == 1) && (slot[slotP + i] == 1) || (Color == 2) && (slot[slotP + i] == 2)) {//起点と同じ色の場合
+					for (int j = i - 1; j > 0; j--) {
+						if (Color == 1)slot[slotP + j] = 1, flag = 1;//色を白に反転させる
+						if (Color == 2)slot[slotP + j] = 2, flag = 1;//色を黒に反転させる
+					}
+				}
+				else if (slot[slotP + i] == 0) {//空白だった場合
+					break;
+				}
+			}
+		}
+	}			//右ここまで
+
+				//右下の判定
+	if ((slotP < 46) && (slotP != 38) && (slotP != 39) && (slotP != 30) && (slotP != 31) && (slotP != 22) && (slotP != 23) && (slotP != 14) && (slotP != 15) && (slotP != 6) && (slotP != 7)) {//処理を行えないIDを除外
+		if ((((Color == 1) && (slot[slotP + 9] == 2)) || ((Color == 2) && (slot[slotP + 9] == 1))) && (slot[slotP + 9] != 0)) {//右下に違う色があった場合
+			for (int i = 2; i < 8; i++) {
+				if (slotP + (9 * i) > 63)break;//盤外へ出た際に処理を終了する
+				if ((i > 2) && ((slotP + 9 * i == 24) || (slotP + 9 * i == 32) || (slotP + 9 * i == 40) || (slotP + 9 * i == 48) || (slotP + 9 * i == 56)))break;//一周した時に処理を終了する
+				if ((Color == 1) && (slot[slotP + (9 * i)] == 2) || (Color == 2) && (slot[slotP + (9 * i)] == 1)) {}//起点と違う色の場合iを増やす
+				else if ((Color == 1) && (slot[slotP + (9 * i)] == 1) || (Color == 2) && (slot[slotP + (9 * i)] == 2)) {//起点と同じ色の場合
+					for (int j = i - 1; j > 0; j--) {
+						if (Color == 1)slot[slotP + 9 * j] = 1, flag = 1;//色を白に反転させる
+						if (Color == 2)slot[slotP + 9 * j] = 2, flag = 1;//色を黒に反転させる
+					}
+				}
+				else if (slot[slotP + 9 * i] == 0) {//空白だった場合
+					break;
+				}
+			}
+		}
+	}			//右下ここまで
+
+				//下の判定
+	if ((slotP <= 48)) {//処理を行えないIDを除外
+		if ((((Color == 1) && (slot[slotP + 8] == 2)) || ((Color == 2) && (slot[slotP + 8] == 1))) && (slot[slotP + 8] != 0)) {//下に違う色があった場合
+			for (int i = 2; i < 8; i++) {
+				if (slotP + (8 + i) > 63)break;//盤外へ出た際に処理を終了する
+				if ((Color == 1) && (slot[slotP + (8 * i)] == 2) || (Color == 2) && (slot[slotP + (8 * i)] == 1)) {}//起点と違う色の場合iを増やす
+				else if ((Color == 1) && (slot[slotP + (8 * i)] == 1) || (Color == 2) && (slot[slotP + (8 * i)] == 2)) {//起点と同じ色の場合
+					for (int j = i - 1; j > 0; j--) {
+						if (Color == 1)slot[slotP + 8 * j] = 1, flag = 1;//色を白に反転させる
+						if (Color == 2)slot[slotP + 8 * j] = 2, flag = 1;//色を黒に反転させる
+					}
+				}
+				else if (slot[slotP + 8 * i] == 0) {//空白だった場合
+					break;
+				}
+			}
+		}
+	}			//下ここまで
+
+				//左下の判定
+	if ((slotP < 48) && (slotP != 24) && (slotP != 25) && (slotP != 32) && (slotP != 33) && (slotP != 40) && (slotP != 41) && (slotP != 1) && (slotP != 8) && (slotP != 9) && (slotP != 16) && (slotP != 17) && (slotP != 0)) {//処理を行えないIDを除外
+		if ((((Color == 1) && (slot[slotP + 7] == 2)) || ((Color == 2) && (slot[slotP + 7] == 1))) && (slot[slotP + 7] != 0)) {//左下に違う色があった場合
+			for (int i = 2; i < 8; i++) {
+				if (slotP + (7 * i) > 63)break;//盤外へ出た際に処理を終了する
+				if ((i > 2) && ((slotP + 7 * i == 15) || (slotP + 7 * i == 23) || (slotP + 7 * i == 31) || (slotP + 7 * i == 39) || (slotP + 7 * i == 47) || (slotP + 7 * i == 55) || (slotP + 7 * i == 63)))break;//一周した時に処理を終了する
+				if ((Color == 1) && (slot[slotP + (7 * i)] == 2) || (Color == 2) && (slot[slotP + (7 * i)] == 1)) {}//起点と違う色の場合iを増やす
+				else if ((Color == 1) && (slot[slotP + (7 * i)] == 1) || (Color == 2) && (slot[slotP + (7 * i)] == 2)) {//起点と同じ色の場合
+					for (int j = i - 1; j > 0; j--) {
+						if (Color == 1)slot[slotP + 7 * j] = 1, flag = 1;//色を白に反転させる
+						if (Color == 2)slot[slotP + 7 * j] = 2, flag = 1;//色を黒に反転させる
+					}
+				}
+				else if (slot[slotP + 7 * i] == 0) {//空白だった場合
+					break;
+				}
+			}
+		}
+	}			//左下ここまで
+
+	if ((flag == 1)) {
+		slot[slotP] = Color;
+		slot[64] = 1;
 	}
+	return slot;
+}
 
 int* Player(int slot[65],int Color) {//左クリック時の処理
 	if (slot[64] == 0) {
@@ -313,7 +312,7 @@ int* NPC(int slot[65], int difficult) {//NPC
 	return slot;
 }
 
-int* Result(int slot[65],int Win,int Lose);
+
 
 int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	SetGraphMode(800, 600, 32),ChangeWindowMode(TRUE), DxLib_Init(), SetDrawScreen(DX_SCREEN_BACK); //ウィンドウモード変更と初期化と裏画面設定と画面モードの設定
@@ -339,6 +338,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	for (int i = 0; i < 64; i++) {//マスクデータ初期化
 		slotM[i] = slot[i];
 	}
+
 	// while(裏画面を表画面に反映, メッセージ処理, 画面クリア)
 	while (ScreenFlip() == 0 && ProcessMessage() == 0 && ClearDrawScreen() == 0) {
 		
@@ -382,42 +382,4 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 	DxLib_End(); // DXライブラリ終了処理
 	return 0;
-}
-
-int* Result(int slot[65], int Win,int Lose) {//いろいろ表示
-	int Sb = 0, Sw = 0;
-	int Result[3] = {0,0,0};
-	for (int i = 0; i < 64; i++) {
-		if (slot[i] == 1)Sw++;
-		if (slot[i] == 2)Sb++;
-	}
-	DrawFormatString(5, 65, GetColor(255, 255, 255), " %d勝", Win);
-	DrawFormatString(5, 85, GetColor(255, 255, 255), " %d敗", Lose);
-	if (Sw + Sb == 64) {
-		if (slot[64] == 2) {
-			if (Sw > Sb) {
-				DrawFormatString(5, 25, GetColor(255, 255, 255), "あなたの負け");
-			}
-			else {
-				DrawFormatString(5, 25, GetColor(255, 255, 255), "あなたの勝ち");
-			}
-			DrawFormatString(5, 45, GetColor(255, 255, 255), "ESCで再戦");
-		}
-		else {
-			if (Sw > Sb) {
-				Result[2]++;
-			}
-			else {
-				Result[1]++;
-			}
-			DrawFormatString(5, 45, GetColor(255, 255, 255), "ESCで再戦");
-		}
-		Result[0] = 2;
-		return Result;
-	}
-	else {
-		DrawFormatString(5, 25, GetColor(255, 255, 255), "黒の数 %d", Sb);
-		DrawFormatString(5, 45, GetColor(255, 255, 255), "白の数 %d", Sw);
-	}
-	return Result;
 }
