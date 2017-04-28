@@ -2,7 +2,7 @@
 //
 //ì¬ŠJn“ú 2017/4/19
 //ƒIƒZƒƒvƒƒOƒ‰ƒ€
-//MS‚S”N@sŒ´‘ñ”n
+//MS4”N@sŒ´‘ñ”n
 //
 //////////////////////////////////////////////////
 
@@ -40,24 +40,41 @@ void Stone(int slot[65]) {//Î‚Ì•`‰æ
 	}
 }
 
-int* Result(int slot[65], int Win, int Lose) {//‚¢‚ë‚¢‚ë•\¦
+int* Result(int slot[65], int Win, int Lose ,int flag) {//‚¢‚ë‚¢‚ë•\¦
+	int MouseX, MouseY, slotP = 0;
 	int Sb = 0, Sw = 0;
 	int Result[3] = { 0,0,0 };
+
 	for (int i = 0; i < 64; i++) {
 		if (slot[i] == 1)Sw++;
 		if (slot[i] == 2)Sb++;
-	}
-	DrawFormatString(5, 65, GetColor(255, 255, 255), " %dŸ", Win);
-	DrawFormatString(5, 85, GetColor(255, 255, 255), " %d”s", Lose);
+	}//FWŒv
+
+	GetMousePoint(&MouseX, &MouseY);//ƒ}ƒEƒX‚ÌÀ•W‚ğæ“¾
+	if ((MouseX > 112) && (MouseY > 12) && (MouseX < 688) && (MouseY < 588)) {
+		for (int i = 0; i < 8; i++) {//ƒ}ƒEƒXÀ•W‚©‚çÎ‚ÌID‚ğŒŸõ
+			if ((MouseX >=(i * 8) * 9 + 112) && (MouseX <= ((i + 1) * 8) * 9 + 112)) {
+				for (int j = 0; j < 8; j++) {
+					if ((MouseY >=(j * 8) * 9 + 12) && (MouseY <= ((j + 1) * 8) * 9 + 12)) {
+						slotP = i + j * 8;//ID‚Ì“Á’è
+						DrawFormatString(18, 94, GetColor(255, 255, 255), "ID %d", slotP);//ID‚ğ•\¦
+					}
+				}
+			}
+		}//ŒŸõI‚í‚è
+	}//ƒ}ƒEƒXˆÊ’u‚ÌID•\¦
+
+	DrawFormatString(10, 54, GetColor(255, 255, 255), " %dŸ", Win);
+	DrawFormatString(10, 74, GetColor(255, 255, 255), " %d”s", Lose);
 	if (Sw + Sb == 64) {
 		if (slot[64] == 2) {
 			if (Sw > Sb) {
-				DrawFormatString(5, 25, GetColor(255, 255, 255), "‚ ‚È‚½‚Ì•‰‚¯");
+				DrawFormatString(8, 14, GetColor(255, 255, 255), "‚ ‚È‚½‚Ì•‰‚¯");
 			}
 			else {
-				DrawFormatString(5, 25, GetColor(255, 255, 255), "‚ ‚È‚½‚ÌŸ‚¿");
+				DrawFormatString(8, 14, GetColor(255, 255, 255), "‚ ‚È‚½‚ÌŸ‚¿");
 			}
-			DrawFormatString(5, 45, GetColor(255, 255, 255), "ESC‚ÅÄí");
+			DrawFormatString(10, 34, GetColor(255, 255, 255), "ESC‚ÅÄí");
 		}
 		else {
 			if (Sw > Sb) {
@@ -72,8 +89,18 @@ int* Result(int slot[65], int Win, int Lose) {//‚¢‚ë‚¢‚ë•\¦
 		return Result;
 	}
 	else {
-		DrawFormatString(5, 25, GetColor(255, 255, 255), "•‚Ì” %d", Sb);
-		DrawFormatString(5, 45, GetColor(255, 255, 255), "”’‚Ì” %d", Sw);
+		DrawFormatString(20, 14, GetColor(255, 255, 255), "•‚Ì” %d", Sb);
+		DrawFormatString(20, 34, GetColor(255, 255, 255), "”’‚Ì” %d", Sw);
+		if (flag == 0) {
+			DrawFormatString(700, 14, GetColor(255, 255, 255), "‚ ‚È‚½‚Ì”Ô");
+			DrawFormatString(718, 34, GetColor(255, 255, 255), "i•j");
+		}
+		else if (flag == 1) {
+			DrawFormatString(700, 14, GetColor(255, 255, 255), "‘Šè‚Ì”Ô");
+			DrawFormatString(718, 34, GetColor(255, 255, 255), "i”’j");
+		}
+		DrawFormatString(695, 54, GetColor(255, 255, 255), "‰EƒNƒŠƒbƒN‚Å");
+		DrawFormatString(695, 74, GetColor(255, 255, 255), "ƒpƒX");
 	}
 	return Result;
 }
@@ -142,7 +169,7 @@ int* Decision(int slot[65], int slotP, int Color) {//”»’è‚Ìˆ—AColor‚Ì’l‚Í1F”
 	}			//‰Eã‚±‚±‚Ü‚Å
 
 				//¶‚Ì”»’è
-	if ((slotP != 0) && (slotP != 8) && (slotP != 16) && (slotP != 24) && (slotP != 32) && (slotP != 40) && (slotP != 48) && (slotP != 56)) {//ˆ—‚ğs‚¦‚È‚¢ID‚ğœŠO
+	if ((slotP != 0) && (slotP != 1) && (slotP != 8) && (slotP != 9) && (slotP != 16) && (slotP != 17) && (slotP != 24) && (slotP != 25) && (slotP != 32) && (slotP != 33) && (slotP != 40) && (slotP != 41) && (slotP != 48) && (slotP != 49) && (slotP != 56) && (slotP !=57)) {//ˆ—‚ğs‚¦‚È‚¢ID‚ğœŠO
 		if ((((Color == 1) && (slot[slotP - 1] == 2)) || ((Color == 2) && (slot[slotP - 1] == 1))) && (slot[slotP - 1] != 0)) {//¶‚Éˆá‚¤F‚ª‚ ‚Á‚½ê‡
 			for (int i = 2; i < 8; i++) {
 				if ((slotP - i) < 0)break;//”ÕŠO‚Öo‚½Û‚Éˆ—‚ğI—¹‚·‚é
@@ -162,7 +189,7 @@ int* Decision(int slot[65], int slotP, int Color) {//”»’è‚Ìˆ—AColor‚Ì’l‚Í1F”
 	}			//¶‚±‚±‚Ü‚Å
 
 				//‰E‚Ì”»’è
-	if ((slotP != 7) && (slotP != 15) && (slotP != 23) && (slotP != 31) && (slotP != 39) && (slotP != 47) && (slotP != 55) && (slotP != 63)) {//ˆ—‚ğs‚¦‚È‚¢ID‚ğœŠO
+	if ((slotP != 6) && (slotP != 7) && (slotP != 14) && (slotP != 15) && (slotP != 22) && (slotP != 23) && (slotP != 30) && (slotP != 31) && (slotP != 38) && (slotP != 39) && (slotP != 46) && (slotP != 47) && (slotP != 54) && (slotP != 55) && (slotP != 62) && (slotP != 63)) {//ˆ—‚ğs‚¦‚È‚¢ID‚ğœŠO
 		if ((((Color == 1) && (slot[slotP + 1] == 2)) || ((Color == 2) && (slot[slotP + 1] == 1))) && (slot[slotP + 1] != 0)) {//‰E‚Éˆá‚¤F‚ª‚ ‚Á‚½ê‡
 			for (int i = 2; i < 8; i++) {
 				if ((slotP + i) > 63)break;//”ÕŠO‚Öo‚½Û‚Éˆ—‚ğI—¹‚·‚é
@@ -202,7 +229,7 @@ int* Decision(int slot[65], int slotP, int Color) {//”»’è‚Ìˆ—AColor‚Ì’l‚Í1F”
 	}			//‰E‰º‚±‚±‚Ü‚Å
 
 				//‰º‚Ì”»’è
-	if ((slotP <= 48)) {//ˆ—‚ğs‚¦‚È‚¢ID‚ğœŠO
+	if ((slotP < 48)) {//ˆ—‚ğs‚¦‚È‚¢ID‚ğœŠO
 		if ((((Color == 1) && (slot[slotP + 8] == 2)) || ((Color == 2) && (slot[slotP + 8] == 1))) && (slot[slotP + 8] != 0)) {//‰º‚Éˆá‚¤F‚ª‚ ‚Á‚½ê‡
 			for (int i = 2; i < 8; i++) {
 				if (slotP + (8 + i) > 63)break;//”ÕŠO‚Öo‚½Û‚Éˆ—‚ğI—¹‚·‚é
@@ -257,7 +284,7 @@ int* Player(int slot[65],int Color) {//¶ƒNƒŠƒbƒN‚Ìˆ—
 					for (int j = 0; j < 8; j++) {
 						if ((MouseY > (j * 8) * 9 + 12) && (MouseY < ((j + 1) * 8) * 9 + 12)) {
 							slotP = i + j * 8;//ID‚Ì“Á’è
-							DrawFormatString(10, 5, GetColor(255, 255, 255), "ID %d", slotP);
+							DrawFormatString(18, 94, GetColor(255, 255, 255), "ID %d", slotP);
 						}
 					}
 				}
@@ -364,7 +391,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 						flag = 1;
 					}
 				}
-			}//ƒvƒŒƒCƒ„[ƒtƒFƒCƒY
+			}//ƒvƒŒƒCƒ„[
 		}
 		if ((flag == 0) && ((GetMouseInput() & MOUSE_INPUT_RIGHT) != 0))flag = 1;//‰EƒNƒŠƒbƒN‚ÅƒXƒLƒbƒv
 		if ((CheckHitKey(KEY_INPUT_ESCAPE) == 1)&&(slot[64] == 2))goto Reset;//ESCƒL[‚ÅƒŠƒZƒbƒg
@@ -372,9 +399,9 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		//•`‰æƒtƒFƒCƒY
 		Board();//”Õ‚Ì•`‰æ
 		Stone(slot);//Î‚Ì•`‰æ
-		Win += Result(slot, Win, Lose)[1];//Ÿ‚¿
-		Lose += Result(slot, Win, Lose)[2];//•‰‚¯
-		slot[64] = Result(slot,Win,Lose)[0];//Œ‹‰Ê‚Ì•`Ê
+		Win += Result(slot, Win, Lose, flag)[1];//Ÿ‚¿
+		Lose += Result(slot, Win, Lose, flag)[2];//•‰‚¯
+		slot[64] = Result(slot,Win,Lose, flag)[0];//Œ‹‰Ê‚Ì•`Ê
 
 		//ScreenFlip();
 		fps.Wait();		//‘Ò‹@
